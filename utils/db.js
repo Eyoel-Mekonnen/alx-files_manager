@@ -1,14 +1,12 @@
 const mongo = require('mongodb');
 
 class DBClient {
-  constructor () {
+  constructor() {
     const port = process.env.DB_PORT || '27017';
     const host = process.env.DB_HOST || 'localhost';
     const db = process.env.DB_DATABASE || 'files_manager';
     const url = `mongodb://${host}:${port}`;
-    this.mongoClient = new mongo.MongoClient(url, {
-	    useUnifiedTopology: true });
-    //this.mongoClient.connect();
+    this.mongoClient = new mongo.MongoClient(url, { useUnifiedTopology: true });
     this.dbName = db;
     this.db = null;
     this.mongoClient.connect()
@@ -17,24 +15,17 @@ class DBClient {
       })
       .catch((error) => {
         console.log(`Database Not connected: ${error}`);
-      })
+      });
   }
 
   isAlive() {
     if (this.mongoClient.isConnected()) {
       return true;
-    } else {
-      return false;
-   }
-  }
-  async nbUsers() {
-    /**
-    if (!this.db)
-    {
-      console.error('Database not connected');
-      return 0;
     }
-    **/
+    return false;
+  }
+
+  async nbUsers() {
     try {
       const usersCount = await this.db.collection('users').countDocuments();
       return usersCount;
@@ -43,13 +34,8 @@ class DBClient {
       return 0;
     }
   }
+
   async nbFiles() {
-    /**
-    if (!this.db) {
-      console.error('Database Not connected');
-      return 0;
-    }
-    **/
     try {
       const filesCount = await this.db.collection('files').countDocuments();
       return filesCount;
