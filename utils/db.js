@@ -26,24 +26,13 @@ class DBClient {
   }
 
   async nbUsers() {
-    try {
-      const usersCount = await this.db.collection('users').countDocuments();
-      return usersCount;
-    } catch (error) {
-      console.error(`Error counting users: ${error}`);
-      return 0;
-    }
+    const usersCount = await this.db.collection('users').countDocuments();
+    return usersCount;
   }
 
   async nbFiles() {
-    try {
-      const filesCount = await this.db.collection('files').countDocuments();
-      return filesCount;
-    } catch (error) {
-      console.error(`Error counting files: ${error}`);
-      return 0;
-    }
-  }
+    const filesCount = await this.db.collection('files').countDocuments();
+    return filesCount;
 }
 const dbClient = new DBClient();
 module.exports = dbClient;
