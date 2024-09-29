@@ -1,3 +1,5 @@
+/* eslint consistent-return: "off" */
+
 import sha1 from 'sha1';
 
 const uuid = require('uuid');
@@ -41,46 +43,39 @@ exports.getConnect = (req, res) => {
           if (result) {
             return redis.get(keyToken)
               .then((value) => {
-	        if(value) {
-	          return {"redisValue": value, "token": token};
-	        } else {
-	          return Promise.reject(new Error("Unauthorized"));
-		}
-	      })
-          } else {
-	    return res.status(401).send("Unauthorized");
+                if (value) {
+                  return token;
+                }
+                return res.status(401).send({ error: 'Unauthorized' });
+              })
+              .catch(() => res.status(401).send({ error: 'Unauthorized' }));
           }
-	})
+          return res.status(401).send('Unauthorized');
+        })
+        .catch(() => res.status(401).send('Unauthorized'));
     })
-    .then(({redisValue, token}) => {
-      if (!token) {	      
-        return res.status(401).send({"error": "Unauthorized"});
-      } else {
-	return res.status(200).send({"token": token});
+    .then((token) => {
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
       }
+      return res.status(200).send({ token });
     })
-    .catch((error) => {
-      return res.status(401).send({"error": "Unauthorized"});
-    });
+    .catch(() => res.status(401).send({ error: 'Unauthorized' }));
 };
 
 exports.getDisconnect = (req, res) => {
   const xToken = req.headers['x-token'];
   if (!xToken) {
-    return res.status(401).send({"error": "Unauthorized"});
+    return res.status(401).send({ error: 'Unauthorized' });
   }
   const key = `auth_${xToken}`;
-  return redis.get(key) 
+  return redis.get(key)
     .then((value) => {
-      if(!value) {
-        throw new Error("Unauthorized");
+      if (!value) {
+        throw new Error('Unauthorized');
       }
       return redis.del(key);
     })
-    .then(() => {
-      return res.status(204).send();  
-    })
-    .catch(() => {
-      return res.status(401).send({"error": "Unauthorized"});
-    });
+    .then(() => (res.status(204).send()))
+    .catch(() => (res.status(401).send({ error: 'Unauthorized' })));
 };

@@ -6,11 +6,7 @@ exports.getStatus = (req, res) => {
   const redisValue = redis.isAlive();
   const dbValue = mongo.isAlive();
   if (redisValue && dbValue) {
-    res.statusCode = 200;
-    res.send({ redis: redisValue, db: dbValue });
-  } else {
-    res.statusCode = 500;
-    res.send({ redis: redisValue, db: dbValue });
+    return res.status(200).send({ redis: redisValue, db: dbValue });
   }
 };
 
@@ -23,9 +19,9 @@ exports.getStats = (req, res) => {
     })
     .then((value) => {
       stats.files = value;
-      res.status(200).send(stats);
+      return res.status(200).send(stats);
     })
     .catch((error) => { // eslint-disable-line no-unused-vars
-      res.status(500).send('Falied to fetch stat');
+      return res.status(500).send('Falied to fetch stat');
     });
 };
