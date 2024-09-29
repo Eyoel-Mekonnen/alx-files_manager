@@ -46,22 +46,22 @@ exports.getMe = (req, res) => {
     return res.status(401).send({"error": "Unauthorized"});
   }
   const key = `auth_${xToken}`;
+  console.log(`I am the key who is going to retreive ${key}`);
   redis.get(key)
     .then((userID) => {
       if (!userID) {
         throw new Error("Unauthorized");
       }
-      const value = new ObjectId( userID );;
+      const value = new ObjectId( userID );
       return mongo.db.collection('users').findOne({_id: ObjectId(userID)});
     })
     .then((data) => {
       if (!data) {
-	console.log(data);
         throw new Error("Unauthorized");
       };
       return res.status(200).send({"id": data._id ,"email": data.email});
     })
-    .catch(() => {
+    .catch((error) => {
       return res.status(401).send({"error": "Unauthorized"});
     });
 };

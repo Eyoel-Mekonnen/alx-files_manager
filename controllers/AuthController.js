@@ -30,35 +30,36 @@ exports.getConnect = (req, res) => {
       console.log(result);
       const keyToken = `auth_${token}`;
       const duration = 24 * 60 * 60;
-      const pwdHashedDB = result.passowrd;
+      const pwdHashedDB = result.password;
       const hashedPwd = sha1(password);
-      console.log(`I am the password decoded ${hashedPwd} and am the one retrieved from mongodb ${pwdHashedDB}`);
       if (hashedPwd != pwdHashedDB) {
         return res.status(401).send({"error": "Unauthorized"});
       }
-      console.log("Second time result logged");
       const userID = result._id.toString();
-      console.log('I failed at this exact moment');
-      console.log(`I am user id ${userID}`);
       return redis.set(keyToken, userID, duration)
         .then((result) => {
 	  if (result) {
-            return {"redisResult": result, "userID": userID};
+            return redis.get(keyToken)
+	      .then((value) => {
+	        if(value) {
+	          return {"redisValue": value, "token": token};
+	        } else {
+	          return Promise.reject(new Error("Unauthorized"));
+		}
+	      })
           } else {
 	    return res.status(401).send("Unauthorized");
           }
 	})
     })
-    .then(({ redisResult, userID }) => {
-      if (!redisResult) {
+    .then(({redisValue, token}) => {
+      if (!token) {	      
         return res.status(401).send({"error": "Unauthorized"});
       } else {
-	console.log("Am inside here Because I passed all the way");
-	return res.status(200).send({"token": userID});
+	return res.status(200).send({"token": token});
       }
     })
     .catch((error) => {
-      console.log("I am inside here and i failed");
       return res.status(401).send({"error": "Unauthorized"});
     });
 };
@@ -69,12 +70,12 @@ exports.getDisconnect = (req, res) => {
     return res.status(401).send({"error": "Unauthorized"});
   }
   const key = `auth_${xToken}`;
-  redis.get(xToken) 
+  return redis.get(key) 
     .then((value) => {
       if(!value) {
         throw new Error("Unauthorized");
       }
-      return redis.del(xToken);
+      return redis.del(key);
     })
     .then(() => {
       return res.status(204).send();  
