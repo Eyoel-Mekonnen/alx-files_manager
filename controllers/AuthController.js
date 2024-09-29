@@ -1,46 +1,46 @@
 import sha1 from 'sha1';
 
-const mongo = require('../utils/db');
-
-const redis  = require('../utils/redis');
-
 const uuid = require('uuid');
 
+const mongo = require('../utils/db');
+
+const redis = require('../utils/redis');
+
 exports.getConnect = (req, res) => {
-  const authorization = req.headers.authorization;
+  const { authorization } = req.headers;
   if (!authorization) {
-    return res.status(401).send({"error": "Unauthorized"});
+    return res.status(401).send({ error: 'Unauthorized' });
   }
   const authCredentials = authorization.split(' ');
   const authType = authCredentials[0];
-  if (authType != 'Basic') {
-    return res.status(401).send({"error": "Unauthorized"});
+  if (authType !== 'Basic') {
+    return res.status(401).send({ error: 'Unauthorized' });
   }
   const base64Encoded = authCredentials[1];
-  const decodedByte = Buffer.from(base64Encoded, "base64");
-  const stringDecoded = decodedByte.toString("utf-8");
+  const decodedByte = Buffer.from(base64Encoded, 'base64');
+  const stringDecoded = decodedByte.toString('utf-8');
   const email = stringDecoded.split(':')[0];
   const password = stringDecoded.split(':')[1];
-  mongo.db.collection('users').findOne({"email": email})
+  mongo.db.collection('users').findOne({ email })
     .then((result) => {
       if (!result) {
-        return res.status(401).send({"error": "Unauthorized"});
-      };
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
       const token = uuid.v4().toString();
       console.log(result);
       const keyToken = `auth_${token}`;
       const duration = 24 * 60 * 60;
       const pwdHashedDB = result.password;
       const hashedPwd = sha1(password);
-      if (hashedPwd != pwdHashedDB) {
-        return res.status(401).send({"error": "Unauthorized"});
+      if (hashedPwd !== pwdHashedDB) {
+        return res.status(401).send({ error: 'Unauthorized' });
       }
       const userID = result._id.toString();
       return redis.set(keyToken, userID, duration)
         .then((result) => {
-	  if (result) {
+          if (result) {
             return redis.get(keyToken)
-	      .then((value) => {
+              .then((value) => {
 	        if(value) {
 	          return {"redisValue": value, "token": token};
 	        } else {
