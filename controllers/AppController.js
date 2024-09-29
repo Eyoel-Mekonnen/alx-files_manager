@@ -5,9 +5,7 @@ const mongo = require('../utils/db');
 exports.getStatus = (req, res) => {
   const redisValue = redis.isAlive();
   const dbValue = mongo.isAlive();
-  if (redisValue && dbValue) {
-    return res.status(200).json({ redis: redisValue, db: dbValue });
-  }
+  return res.status(200).json({ redis: redisValue, db: dbValue });
 };
 
 exports.getStats = (req, res) => {
@@ -21,7 +19,5 @@ exports.getStats = (req, res) => {
       stats.files = value;
       return res.status(200).json(stats);
     })
-    .catch((error) => { // eslint-disable-line no-unused-vars
-      return res.status(500).send('Falied to fetch stat');
-    });
+    .catch(() => res.status(500).send('Falied to fetch stat'));
 };
