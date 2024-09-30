@@ -7,8 +7,6 @@ const index = require("./routes/index")
 app.use(express.json()); // This needs to be above any route handlers.
 
 app.use('/', index);
-app.use('/users', index);
-app.use
 
 app.listen(port, () => {
   console.log(`Server listening on port: ${port}`)
