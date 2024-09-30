@@ -24,7 +24,7 @@ exports.postNew = (req, res) => {
     .then((value) => {
       if (value) {
         res.status(400).json({ error: 'Already exist' });
-	return Promise.reject(new Error('User exists'));
+        return Promise.reject(new Error('User exists'));
       }
       const passwordHashed = sha1(password);
       const emailPasswordObject = { email, password: passwordHashed };
@@ -38,7 +38,7 @@ exports.postNew = (req, res) => {
       return res.status(400).json({ error: 'Internal Server Error' });
     })
     .catch((error) => {
-      res.status(400).json({ error: 'Internal Server Error error' });
+      res.status(400).json({ error: `Internal Server Error error ${error}` });
     });
 };
 
