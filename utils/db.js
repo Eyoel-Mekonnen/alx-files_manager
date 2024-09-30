@@ -10,7 +10,7 @@ class DBClient {
     this.mongoClient.connect()
       .then(() => {
         this.db = this.mongoClient.db(db);
-      })
+      });
   }
 
   isAlive() {

@@ -21,6 +21,6 @@ class AppController {
         return res.status(200).json(stats);
       })
       .catch(() => res.status(500).send('Falied to fetch stat'));
-  } 
+  }
 }
 module.exports = AppController;
