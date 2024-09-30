@@ -23,7 +23,8 @@ exports.postNew = (req, res) => {
   mongo.db.collection('users').findOne({ email })
     .then((value) => {
       if (value) {
-        return res.status(200).json({ error: 'Already exist' });
+        res.status(400).json({ error: 'Already exist' });
+	return Promise.reject(new Error('User exists'));
       }
       const passwordHashed = sha1(password);
       const emailPasswordObject = { email, password: passwordHashed };
@@ -32,11 +33,13 @@ exports.postNew = (req, res) => {
     .then((insertedData) => {
       if (insertedData) {
         const id = insertedData.insertedId;
-        return res.status(200).send({ id, email });
+        return res.status(201).json({ id, email });
       }
       return res.status(400).json({ error: 'Internal Server Error' });
     })
-    .catch(() => res.status(400).json({ error: 'Internal Server Error' }));
+    .catch((error) => {
+      res.status(400).json({ error: 'Internal Server Error error' });
+    });
 };
 
 exports.getMe = (req, res) => {
