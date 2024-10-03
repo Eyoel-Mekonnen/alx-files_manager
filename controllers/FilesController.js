@@ -31,7 +31,7 @@ class FilesController {
     if (!req.body.data && req.body.type !== 'folder') {
       return res.status(400).send({error: 'Missing data'});
     }
-    const parentId = req.body.parentId ? req.body.parentId: '0';
+    const parentId = req.body.parentId ? req.body.parentId: 0;
     console.log(`I am the parent ID ${parentId}`);
     if (parentId !== '0') {
       return dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) })
