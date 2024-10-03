@@ -4,7 +4,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const index = require('./routes/index');
 
-app.use(express.json()); // This needs to be above any route handlers.
+app.use(express.json({limit: '10mb'})); // This needs to be above any route handlers.
 
 app.use('/', index);
 

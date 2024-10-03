@@ -8,6 +8,9 @@ const uuid = require('uuid');
 
 const path = require('path');
 
+const { ObjectId } = require('mongodb');
+
+
 class FilesController {
   static async postUpload (req, res) {
     const acceptedType = ['folder', 'file', 'image'];
@@ -31,7 +34,7 @@ class FilesController {
     const parentId = req.body.parentId ? req.body.parentId: '0';
     console.log(`I am the parent ID ${parentId}`);
     if (parentId !== '0') {
-      return dbClient.db.collection('files').findOne({ parentId })
+      return dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) })
         .then((file) => {
           if (!file) {
 	    return res.status(400).send({ error: 'Parent not found' });
@@ -70,6 +73,7 @@ class FilesController {
       const filePath = uuid.v4().toString();
       const fullPath = path.join(folderPath, filePath);
       const decodedData = Buffer.from(req.body.data, 'base64');
+      console.log('My data body contains data so am here')
       if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath, {recursive: true});
       }
@@ -85,6 +89,7 @@ class FilesController {
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
           if (output) {
+            console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
             return res.status(201).send({
               id: output.insertedId.toString(), 
               userId: object.userId,
