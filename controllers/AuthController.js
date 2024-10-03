@@ -21,6 +21,7 @@ exports.getConnect = (req, res) => {
   const base64Encoded = authCredentials[1];
   const decodedByte = Buffer.from(base64Encoded, 'base64');
   const stringDecoded = decodedByte.toString('utf-8');
+  // console.log(stringDecoded);
   const email = stringDecoded.split(':')[0];
   const password = stringDecoded.split(':')[1];
   mongo.db.collection('users').findOne({ email })
@@ -29,11 +30,12 @@ exports.getConnect = (req, res) => {
         return res.status(401).send({ error: 'Unauthorized' });
       }
       const token = uuid.v4().toString();
-      console.log(result);
+      // console.log(result);
       const keyToken = `auth_${token}`;
       const duration = 24 * 60 * 60;
       const pwdHashedDB = result.password;
       const hashedPwd = sha1(password);
+      // console.log(`${hashedPwd} = ${pwdHashedDB}`);
       if (hashedPwd !== pwdHashedDB) {
         return res.status(401).send({ error: 'Unauthorized' });
       }
