@@ -31,7 +31,7 @@ class FilesController {
     if (!req.body.data && req.body.type !== 'folder') {
       return res.status(400).send({error: 'Missing data'});
     }
-    const parentId = req.body.parentId ? req.body.parentId: 0;
+    const parentId = req.body.parentId ? req.body.parentId: '0';
     console.log(`I am the parent ID ${parentId}`);
     if (parentId !== '0') {
       return dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) })
@@ -67,7 +67,8 @@ class FilesController {
 
     const { name, type } = req.body;
     const isPublic = req.body.isPublic ? req.body.isPublic: false;
-
+    Number(parentId);
+    console.log(typeof(parentId));
     if (req.body.data && (req.body.type === 'file' || req.body.type === 'image')) {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
       const filePath = uuid.v4().toString();
@@ -89,14 +90,14 @@ class FilesController {
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
           if (output) {
-            console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
+            //console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
             return res.status(201).send({
               id: output.insertedId.toString(), 
               userId: object.userId,
               name: object.name,
 	      type: object.type,
               isPublic: object.isPublic,
-              parentId: object.parentId,
+              parentId: parentId === '0' ? 0 : parentId,
 	    })
 	  }
 	})
