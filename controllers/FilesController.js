@@ -118,7 +118,7 @@ class FilesController {
 	      name: object.name,
               type: object.type,
               isPublic: object.isPublic,
-              parentId: object.parentId,
+              parentId: parentId === '0' ? 0 : parentId,,
 	    })
 	  }
 	})
