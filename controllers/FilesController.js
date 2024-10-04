@@ -157,13 +157,13 @@ class FilesController {
     } 
     obj.userId = ObjectId(userId);
     const page = req.query.page === undefined ? 0 : req.query.page;
-    mongoPipeline = [
+    const mongoPipeline = [
       { $match: obj },
       { $skip : page * 20 },
       { $limit: 20 },
     ];
-    const arrayFiles = await mongoClient.db.collection('files').aggregate(mongoPipeline).toArray();
-    return res.status(200).send(arraFiles);
+    const arrayFiles = await dbClient.db.collection('files').aggregate(mongoPipeline).toArray();
+    return res.status(200).send(arrayFiles);
   }
 }
 module.exports = FilesController;
