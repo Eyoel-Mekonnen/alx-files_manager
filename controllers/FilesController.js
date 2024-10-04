@@ -125,13 +125,16 @@ class FilesController {
     }    
   }
   static async getShow(req, res) {
+    console.log('I am called mate');
     const tokenHeader = req.headers['x-token'];
+    console.log('I am called mate');
     const userID = await FilesController.getUserId(`auth_${tokenHeader}`);
     if (!userID) {
       return res.status(401).send({ error: 'Unauthorized' });
     }
     const idPassed = req.params.id;
-    const output = await mongoClient.db.collection('files').findOne({ _id: ObjectId(idPassed), userId: ObjectId(userID) });
+    console.log(`I am the user id inside getShow ${userID}`);
+    const output = await dbClient.db.collection('files').findOne({ _id: ObjectId(idPassed), userId: ObjectId(userID) });
     if (output) {
       return res.status(200).send({
         id: output._id,
@@ -142,10 +145,12 @@ class FilesController {
 	parentId: output.parentId === '0' ? 0 : output.parentId,
       })
     } else {
+      console.log('I was not found');
       return res.status(404).send({ error: 'Not found'});
     }
   }
   static async getIndex(req, res) {
+    console.log('I am getIndex mate');
     const tokenHeader = req.headers['x-token'];
     const userId = await FilesController.getUserId(`auth_${tokenHeader}`);
     if (!userId) {
@@ -153,10 +158,10 @@ class FilesController {
     }
     const obj = {}
     if (req.query.parentId !== undefined) {
-      obj.parentId = ObjectId(req.query.parentId);
+      obj.parentId = req.query.parentId === '0' ? '0' : ObjectId(req.query.parentId);
     } 
     obj.userId = ObjectId(userId);
-    const page = req.query.page === undefined ? 0 : req.query.page;
+    const page = parseInt(req.query.page, 10) || 0;
     const mongoPipeline = [
       { $match: obj },
       { $skip : page * 20 },
