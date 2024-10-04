@@ -124,5 +124,46 @@ class FilesController {
 	})
     }    
   }
+  static async getShow(req, res) {
+    const tokenHeader = req.headers['x-token'];
+    const userID = await FilesController.getUserId(`auth_${tokenHeader}`);
+    if (!userID) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+    const idPassed = req.params.id;
+    const output = await mongoClient.db.collection('files').findOne({ _id: ObjectId(idPassed), userId: ObjectId(userID) });
+    if (output) {
+      return res.status(200).send({
+        id: output._id,
+	userId: output.userId,
+	name: output.name,
+	type: output.type,
+	isPublic: output.isPublic,
+	parentId: output.parentId === '0' ? 0 : output.parentId,
+      })
+    } else {
+      return res.status(404).send({ error: 'Not found'});
+    }
+  }
+  static async getIndex(req, res) {
+    const tokenHeader = req.headers['x-token'];
+    const userId = await FilesController.getUserId(`auth_${tokenHeader}`);
+    if (!userId) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+    const obj = {}
+    if (req.query.parentId !== undefined) {
+      obj.parentId = ObjectId(req.query.parentId);
+    } 
+    obj.userId = ObjectId(userId);
+    const page = req.query.page === undefined ? 0 : req.query.page;
+    mongoPipeline = [
+      { $match: obj },
+      { $skip : page * 20 },
+      { $limit: 20 },
+    ];
+    const arrayFiles = await mongoClient.db.collection('files').aggregate(mongoPipeline).toArray();
+    return res.status(200).send(arraFiles);
+  }
 }
 module.exports = FilesController;
