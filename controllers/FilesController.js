@@ -158,8 +158,10 @@ class FilesController {
     }
     const obj = {}
     if (req.query.parentId !== undefined) {
+      obj.parentId = '0';
+    } else {
       obj.parentId = req.query.parentId === '0' ? '0' : ObjectId(req.query.parentId);
-    } 
+    }
     obj.userId = ObjectId(userId);
     const page = parseInt(req.query.page, 10) || 0;
     const mongoPipeline = [
