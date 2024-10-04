@@ -157,7 +157,7 @@ class FilesController {
       return res.status(401).send({ error: 'Unauthorized' });
     }
     const obj = {}
-    if (req.query.parentId !== undefined) {
+    if (req.query.parentId === undefined) {
       obj.parentId = '0';
     } else {
       if (req.query.parentId === '0') {
