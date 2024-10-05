@@ -161,7 +161,7 @@ class FilesController {
       obj.parentId = '0';
     } else {
       if (req.query.parentId === '0') {
-        obj.parentId = 0;
+        obj.parentId = '0';
       } else {
         obj.parentId = ObjectId(req.query.parentId);
       }
