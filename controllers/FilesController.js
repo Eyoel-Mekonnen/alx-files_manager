@@ -169,12 +169,10 @@ class FilesController {
 	
     console.log(typeof(obj.userId));
     const page = Number(req.query.page) || 0;
-    const itemsPerPage = 20;
-    const skipAmount = page * itemsPerPage;
     const mongoPipeline = [
       { $match: obj },
-      { $skip : skipAmount },
-      { $limit: itemsPerPage },
+      { $skip : page * 20 },
+      { $limit: 20 },
     ];
     const arrayFiles = await dbClient.db.collection('files').aggregate(mongoPipeline).toArray();
     console.log(arrayFiles);
