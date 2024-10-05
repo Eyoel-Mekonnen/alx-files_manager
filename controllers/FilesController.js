@@ -156,17 +156,18 @@ class FilesController {
     if (!userId) {
       return res.status(401).send({ error: 'Unauthorized' });
     }
-    const obj = {}
+    const obj = {userId: ObjectId(userId)};
     if (req.query.parentId === undefined) {
-      obj.parentId = '0';
+      obj.parentId = 0;
     } else {
       if (req.query.parentId === '0') {
-        obj.parentId = '0';
+        obj.parentId = 0;
       } else {
         obj.parentId = ObjectId(req.query.parentId);
       }
     }
-    obj.userId = ObjectId(userId);
+	
+    console.log(typeof(obj.userId));
     const page = parseInt(req.query.page, 10) || 0;
     const mongoPipeline = [
       { $match: obj },
@@ -174,6 +175,7 @@ class FilesController {
       { $limit: 20 },
     ];
     const arrayFiles = await dbClient.db.collection('files').aggregate(mongoPipeline).toArray();
+    console.log(arrayFiles);
     return res.status(200).send(arrayFiles);
   }
 }
