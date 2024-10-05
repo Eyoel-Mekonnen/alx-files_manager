@@ -203,6 +203,66 @@ class FilesController {
         (file.parentId && file.parentId.toString() === '0')
           ? '0' // Return '0' as string
           : file.parentId.toString(),
-  */ 
+  */
+  static async putPublish(req, res) {
+    const tokenHeader = req.headers['x-token'];
+    const userId = await FilesController.getUserId(`auth_${tokenHeader}`);
+    if (!userId) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+    const id = req.params.id;
+    const queryObject = {
+      _id: ObjectId(id),
+      userId: ObjectId(userId),
+    }
+    const foundDoc = await dbClient.db.collection('files').findOne(queryObject);
+    if (foundDoc) {
+      const updateValue = await dbClient.db.collection('files').updateOne(queryObject, { $set: {isPublic: 'true'} });
+      if (updateValue.matchCount === 0) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+      if (updateValue.modifiedCount !== 0) {
+        return res.status(200).send({
+          _id: foundDoc._id.toString(),
+          userId: foundDoc.userId.toString(),
+          name: foundDoc.name.toString(),
+          type: foundDoc.type.toString(),
+          isPublic: true,
+          parentId: foundDoc.parentId.toString(),
+        });
+    } else {
+      return res.status(404).send({ error: 'Not found' }); 
+    }
+  }
+  static async putUnpublish(req, res) {
+    const tokenHeader = req.headers['x-token'];
+    const userId = await FilesController.getUserId(`auth_${tokenHeader}`);
+    if (!userId) {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+    const queryObject = {
+      _id: ObjectId(req.params.id),
+      userId: ObjectId(userId),
+    }
+    const foundDoc = await dbClient.db.collection('files').findOne(queryObject);
+    if (foundDoc) {
+      const updateValue = await dbClient.db.collection('files').updateOne(queryObject, { $set: {isPublic: 'false'}});
+      if (updateValue.matchedCount === 0) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+      if (updateValue.modifiedCount !== 0) {
+        return res.status(200).send({
+          id: foundDoc._id.toString(),
+          userId: foundDoc.userId.toString(),
+          name: foundDoc.name.toString(),
+          type: foundDoc.type.toString(),
+          isPublic: false,
+          parentId: foundDoc.parentId.toString(),
+        })
+      }
+    } else {
+      return res.status(404).send({ error: 'Not found' });
+    }
+  }
 }
 module.exports = FilesController;
