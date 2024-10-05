@@ -67,7 +67,13 @@ class FilesController {
 
     const { name, type } = req.body;
     const isPublic = req.body.isPublic ? req.body.isPublic: false;
-    Number(parentId);
+    const userIdObject = ObjectId(userID);
+    let parentIdToStore;
+    if (parentId === '0') {
+      parentIdToStore = '0';
+    } else {
+      parentIdToStore = ObjectId(parentId);
+    }
     console.log(typeof(parentId));
     if (req.body.data && (req.body.type === 'file' || req.body.type === 'image')) {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
@@ -80,11 +86,11 @@ class FilesController {
       }
       await fs.promises.writeFile(fullPath, decodedData, 'binary')
       const object = {
-        userId: userID,
+        userId: userIdObject,
         name,
 	type,
 	isPublic,
-	parentId,
+	parentId: parentIdToStore,
 	localPath: fullPath,
       }
       return dbClient.db.collection('files').insertOne(object)
@@ -93,7 +99,7 @@ class FilesController {
             //console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
             return res.status(201).send({
               id: output.insertedId.toString(), 
-              userId: object.userId,
+              userId: object.userId.toString(),
               name: object.name,
 	      type: object.type,
               isPublic: object.isPublic,
@@ -103,11 +109,11 @@ class FilesController {
 	})
     } else {
       const object = {
-        userId: userID,
+        userId: userIdObject,
 	name,
 	type,
 	isPublic,
-	parentId,
+	parentId: parentIdToStore,
       }
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
@@ -156,7 +162,7 @@ class FilesController {
     if (!userId) {
       return res.status(401).send({ error: 'Unauthorized' });
     }
-    const obj = {} //{userId: ObjectId(userId)};
+    const obj = {userId: ObjectId(userId)};
     if (req.query.parentId === undefined || req.query.parentId === '0' || req.query.parentId === 0) {
       obj.parentId = '0';
     } else {
@@ -183,6 +189,7 @@ class FilesController {
         ? 0
 	: file.parentId.toString(),
     }));
+    console.log(processedFiles);
     return res.status(200).send(processedFiles);
   }
 }
