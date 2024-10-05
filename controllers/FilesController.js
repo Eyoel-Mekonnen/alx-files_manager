@@ -179,6 +179,8 @@ class FilesController {
       { $skip : page * 20 },
       { $limit: 20 },
     ];
+    console.log('Before processed');
+    console.log(typeof(req.query.parentId));
     const arrayFiles = await dbClient.db.collection('files').aggregate(mongoPipeline).toArray();
     console.log(arrayFiles);
     const processedFiles = arrayFiles.map((file) => ({
@@ -187,8 +189,17 @@ class FilesController {
       name: file.name,
       type: file.type,
       isPublic: file.isPublic || false,
-      parentId: file.parentId === '0' || file.parentId === 0 || file.parentId.toString() === '0'? 0 : file.parentId.toString(),
-    }));
+      parentId:
+        file.parentId === '0' ||
+        file.parentId === 0 ||
+        (file.parentId && file.parentId.toString() === '0')
+          ? '0' // Return '0' as string
+          : file.parentId.toString(),
+    }));  
+    console.log('After processed');
+    console.log(typeof(processedFiles.parentId));
+    console.log("Processed files:", processedFiles);
+
     return res.status(200).send(processedFiles);
   }
 }
