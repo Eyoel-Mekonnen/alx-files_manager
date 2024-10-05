@@ -114,11 +114,11 @@ class FilesController {
           if (output) {
             return res.status(201).send({
               id: output.insertedId.toString(),
-	      userId: object.userId,
+	      userId: object.userId.toString(),
 	      name: object.name,
               type: object.type,
               isPublic: object.isPublic,
-              parentId: parentId === '0' ? 0 : parentId,
+              parentId: parentId === '0' || output.parentId === 0 ? 0 : output.parentId.toString(),
 	    })
 	  }
 	})
