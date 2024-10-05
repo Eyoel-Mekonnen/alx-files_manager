@@ -44,7 +44,8 @@ class FilesController {
 	  } else {
             return FilesController.writeToFile(req, res, parentId, userID);
 	  }
-        });
+        })
+	.catch(() => res.status(401).send({ error: 'error'}))
     } else {
       console.log(`I am zero so am inside here`);
       return FilesController.writeToFile(req, res, parentId, userID);
@@ -107,6 +108,7 @@ class FilesController {
 	    })
 	  }
 	})
+	.catch(() => res.status(401).send({ error: 'error'}))
     } else {
       const object = {
         userId: userIdObject,
@@ -128,6 +130,7 @@ class FilesController {
 	    })
 	  }
 	})
+	.catch(() => res.status(401).send({ error: 'error'}))
     }    
   }
   static async getShow(req, res) {
@@ -183,13 +186,9 @@ class FilesController {
       userId: file.userId.toString(),
       name: file.name,
       type: file.type,
-      isPublic: file.isPublic,
-      parentId:
-      file.parentId === '0' || file.parentId === 0
-        ? 0
-	: file.parentId.toString(),
+      isPublic: file.isPublic || false,
+      parentId: file.parentId === '0' || file.parentId === 0 || file.parentId.toString() === '0'? 0 : file.parentId.toString(),
     }));
-    console.log(processedFiles);
     return res.status(200).send(processedFiles);
   }
 }

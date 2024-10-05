@@ -1,12 +1,13 @@
-import chai from 'chai';
-import chaiHttp from 'chai-http';
+const chai = require('chai');
+const chaiHttp = require('chai-http');
 
-import { v4 as uuidv4 } from 'uuid';
+const { v4: uuidv4 } = require('uuid');
 
-import { MongoClient, ObjectID } from 'mongodb';
-import { promisify } from 'util';
-import redis from 'redis';
-import sha1 from 'sha1';
+const { MongoClient, ObjectID } = require('mongodb');
+const { promisify } = require('util');
+const redis = require('redis');
+const sha1 = require('sha1');
+
 
 chai.use(chaiHttp);
 
