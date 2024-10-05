@@ -189,12 +189,7 @@ class FilesController {
       name: file.name,
       type: file.type,
       isPublic: file.isPublic || false,
-      parentId:
-        file.parentId === '0' ||
-        file.parentId === 0 ||
-        (file.parentId && file.parentId.toString() === '0')
-          ? '0' // Return '0' as string
-          : file.parentId.toString(),
+      parentId: file.parentId.toString(),
     }));  
     console.log('After processed');
     console.log(typeof(processedFiles.parentId));
@@ -202,5 +197,12 @@ class FilesController {
 
     return res.status(200).send(processedFiles);
   }
+  /*
+     file.parentId === '0' ||
+        file.parentId === 0 ||
+        (file.parentId && file.parentId.toString() === '0')
+          ? '0' // Return '0' as string
+          : file.parentId.toString(),
+  */ 
 }
 module.exports = FilesController;
