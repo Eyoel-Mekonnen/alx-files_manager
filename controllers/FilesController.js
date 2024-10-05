@@ -137,12 +137,12 @@ class FilesController {
     const output = await dbClient.db.collection('files').findOne({ _id: ObjectId(idPassed), userId: ObjectId(userID) });
     if (output) {
       return res.status(200).send({
-        id: output._id,
-	userId: output.userId,
+        id: output._id.toString(),
+	userId: output.userId.toString(),
 	name: output.name,
 	type: output.type,
 	isPublic: output.isPublic,
-	parentId: output.parentId === 0 ? 0 : output.parentId,
+	parentId: output.parentId === 0 ? 0 : output.parentId.toString(),
       })
     } else {
       console.log('I was not found');
@@ -158,10 +158,10 @@ class FilesController {
     }
     const obj = {userId: ObjectId(userId)};
     if (req.query.parentId === undefined) {
-      obj.parentId = 0;
+      obj.parentId = '0';
     } else {
       if (req.query.parentId === '0') {
-        obj.parentId = 0;
+        obj.parentId = '0';
       } else {
         obj.parentId = ObjectId(req.query.parentId);
       }
