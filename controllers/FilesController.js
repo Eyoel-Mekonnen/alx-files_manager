@@ -168,7 +168,7 @@ class FilesController {
     }
 	
     console.log(typeof(obj.userId));
-    const page = parseInt(req.query.page, 10) || 0;
+    const page = Number(req.query.page) || 0;
     const mongoPipeline = [
       { $match: obj },
       { $skip : page * 20 },
