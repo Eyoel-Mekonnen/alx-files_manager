@@ -142,7 +142,7 @@ class FilesController {
 	name: output.name,
 	type: output.type,
 	isPublic: output.isPublic,
-	parentId: output.parentId === 0 ? 0 : output.parentId.toString(),
+	parentId: output.parentId === '0' || output.parentId === 0 ? 0 : output.parentId.toString(),
       })
     } else {
       console.log('I was not found');
@@ -157,14 +157,10 @@ class FilesController {
       return res.status(401).send({ error: 'Unauthorized' });
     }
     const obj = {userId: ObjectId(userId)};
-    if (req.query.parentId === undefined) {
+    if (req.query.parentId === undefined || req.query.parentId === '0') {
       obj.parentId = '0';
     } else {
-      if (req.query.parentId === '0') {
-        obj.parentId = '0';
-      } else {
-        obj.parentId = ObjectId(req.query.parentId);
-      }
+      obj.parentId = ObjectId(req.query.parentId);
     }
 	
     console.log(typeof(obj.userId));
