@@ -156,14 +156,14 @@ class FilesController {
     if (!userId) {
       return res.status(401).send({ error: 'Unauthorized' });
     }
-    const obj = {userId: ObjectId(userId)};
+    const obj = {} //{userId: ObjectId(userId)};
     if (req.query.parentId === undefined || req.query.parentId === '0' || req.query.parentId === 0) {
       obj.parentId = '0';
     } else {
       obj.parentId = ObjectId(req.query.parentId);
     }
 	
-    console.log(typeof(obj.userId));
+    // console.log(typeof(obj.userId));
     const page = Number(req.query.page) || 0;
     const mongoPipeline = [
       { $match: obj },
