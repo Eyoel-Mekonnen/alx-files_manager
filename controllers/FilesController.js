@@ -230,10 +230,12 @@ class FilesController {
           isPublic: true,
           parentId: foundDoc.parentId.toString(),
         });
+      }
     } else {
       return res.status(404).send({ error: 'Not found' }); 
     }
   }
+
   static async putUnpublish(req, res) {
     const tokenHeader = req.headers['x-token'];
     const userId = await FilesController.getUserId(`auth_${tokenHeader}`);
