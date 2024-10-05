@@ -142,7 +142,7 @@ class FilesController {
 	name: output.name,
 	type: output.type,
 	isPublic: output.isPublic,
-	parentId: output.parentId === '0' ? 0 : output.parentId,
+	parentId: output.parentId === 0 ? 0 : output.parentId,
       })
     } else {
       console.log('I was not found');
@@ -158,10 +158,10 @@ class FilesController {
     }
     const obj = {userId: ObjectId(userId)};
     if (req.query.parentId === undefined) {
-      obj.parentId = '0';
+      obj.parentId = 0;
     } else {
       if (req.query.parentId === '0') {
-        obj.parentId = '0';
+        obj.parentId = 0;
       } else {
         obj.parentId = ObjectId(req.query.parentId);
       }
