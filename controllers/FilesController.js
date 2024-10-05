@@ -158,7 +158,7 @@ class FilesController {
     }
     const obj = {userId: ObjectId(userId)};
     if (req.query.parentId === undefined) {
-      obj.parentId = 0;
+      obj.parentId = '0';
     } else {
       if (req.query.parentId === '0') {
         obj.parentId = 0;
@@ -176,7 +176,18 @@ class FilesController {
     ];
     const arrayFiles = await dbClient.db.collection('files').aggregate(mongoPipeline).toArray();
     console.log(arrayFiles);
-    return res.status(200).send(arrayFiles);
+    const processedFiles = arrayFiles.map((file) => ({
+      id: file._id.toString(),
+      userId: file.userId.toString(),
+      name: file.name,
+      type: file.type,
+      isPublic: file.isPublic,
+      parentId:
+      file.parentId === '0' || file.parentId === 0
+        ? 0
+	: file.parentId.toString(),
+    }));
+    return res.status(200).send(processedFiles);
   }
 }
 module.exports = FilesController;
