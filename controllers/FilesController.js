@@ -10,6 +10,7 @@ const path = require('path');
 
 const { ObjectId } = require('mongodb');
 
+const mime = require('mime');
 
 class FilesController {
   static async postUpload (req, res) {
@@ -265,6 +266,32 @@ class FilesController {
     } else {
       return res.status(404).send({ error: 'Not found' });
     }
+  }
+  
+  static async getFile(req, res) {
+    const Id = ObjectId(req.params.id)
+    const file = await dbClient.db.collection('files').findOne({_id: Id});
+    if (!file) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+    const userID = req.headers['x-token'];
+    const userId = await FilesController.getUserId(`auth_${userID}`);
+    if (!file.isPublic && userId !== file.userId.toString()) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+    if (file.type === 'folder') {
+      return res.status(400).send({ error: 'A folder doesn\'t have content '});
+    }
+    if (!file.localPath) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+    const mime_type = mime.getType(file.localPath);
+    res.setHeader('Content-Type', mime_type);
+    res.status(200).sendFile(file.localPath, (err) => {
+      if (err) {
+        return res.status(500).send({ error: 'Error sending file' });
+      }
+    });
   }
 }
 module.exports = FilesController;
