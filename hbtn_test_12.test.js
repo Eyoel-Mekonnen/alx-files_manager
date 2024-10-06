@@ -8,6 +8,7 @@ const { promisify } = require('util');
 const redis = require('redis');
 const sha1 = require('sha1');
 const fs = require('fs');
+
 chai.use(chaiHttp);
 
 describe('GET /files/:id/data', () => {
@@ -22,8 +23,8 @@ describe('GET /files/:id/data', () => {
     let initialUserId = null;
     let initialUserToken = null;
 
-    let initialFileId = null;
-    let initialFileContent = null;
+    let initialUnpublishedFileId = null;
+    let initialPublishedFileId = null;
 
     const folderTmpFilesManagerPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 
@@ -73,25 +74,35 @@ describe('GET /files/:id/data', () => {
                     initialUserId = createdDocs.ops[0]._id.toString();
                 }
 
-                // Add 1 file
+                // Add 1 file publish
                 fctCreateTmp();
-                const fileLocalPath = `${folderTmpFilesManagerPath}/${uuidv4()}`;
-                initialFileContent = `Hello-${uuidv4()}`;
-                fs.writeFileSync(fileLocalPath, initialFileContent);
+                const initialFileP = { 
+                    userId: ObjectID(initialUserId), 
+                    name: fctRandomString(), 
+                    type: "file", 
+                    parentId: '0',
+                    isPublic: true,
+                    localPath: `${folderTmpFilesManagerPath}/${uuidv4()}`
+                };
+                const createdFilePDocs = await testClientDb.collection('files').insertOne(initialFileP);
+                if (createdFilePDocs && createdFilePDocs.ops.length > 0) {
+                    initialPublishedFileId = createdFilePDocs.ops[0]._id.toString();
+                }
 
-                const initialFile = { 
+                // Add 1 file unpublish
+                const initialFileUP = { 
                     userId: ObjectID(initialUserId), 
                     name: fctRandomString(), 
                     type: "file", 
                     parentId: '0',
                     isPublic: false,
-                    localPath: fileLocalPath
+                    localPath: `${folderTmpFilesManagerPath}/${uuidv4()}`
                 };
-                const createdFileDocs = await testClientDb.collection('files').insertOne(initialFile);
-                if (createdFileDocs && createdFileDocs.ops.length > 0) {
-                    initialFileId = createdFileDocs.ops[0]._id.toString();
+                const createdFileUPDocs = await testClientDb.collection('files').insertOne(initialFileUP);
+                if (createdFileUPDocs && createdFileUPDocs.ops.length > 0) {
+                    initialUnpublishedFileId = createdFileUPDocs.ops[0]._id.toString();
                 }
-
+                
                 testRedisClient = redis.createClient();
                 redisDelAsync = promisify(testRedisClient.del).bind(testRedisClient);
                 redisGetAsync = promisify(testRedisClient.get).bind(testRedisClient);
@@ -110,29 +121,32 @@ describe('GET /files/:id/data', () => {
     });
         
     afterEach(() => {
-        fctRemoveAllRedisKeys();
         fctRemoveTmp();
     });
 
-    it('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
+    it('GET /files/:id/data with an unpublished file not present locally linked to :id and user authenticated and owner', (done) => {
         chai.request('http://localhost:5000')
-            .get(`/files/${initialFileId}/data`)
-            .set('X-Token', initialUserToken)
-            .buffer()
-            .parse((res, cb) => {
-                res.setEncoding("binary");
-                res.data = "";
-                res.on("data", (chunk) => {
-                    res.data += chunk;
-                });
-                res.on("end", () => {
-                    cb(null, new Buffer(res.data, "binary"));
-                });
-            })
+            .get(`/files/${initialUnpublishedFileId}/data`)
             .end(async (err, res) => {
                 chai.expect(err).to.be.null;
-                chai.expect(res).to.have.status(200);
-                chai.expect(res.body.toString()).to.equal(initialFileContent);
+                chai.expect(res).to.have.status(404);
+
+                const resError = res.body.error;
+                chai.expect(resError).to.equal("Not found");
+                
+                done();
+            });
+    }).timeout(30000);
+
+    it('GET /files/:id/data with an published file not present locally linked to :id and user authenticated and owner', (done) => {
+        chai.request('http://localhost:5000')
+            .get(`/files/${initialPublishedFileId}/data`)
+            .end(async (err, res) => {
+                chai.expect(err).to.be.null;
+                chai.expect(res).to.have.status(404);
+
+                const resError = res.body.error;
+                chai.expect(resError).to.equal("Not found");
                 
                 done();
             });

@@ -1,13 +1,14 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 
-const { v4: uuidv4 } = require('uuid');
+const { v4 as uuidv4 } = require('uuid');
+const fs = require('fs');
 
 const { MongoClient, ObjectID } = require('mongodb');
 const { promisify } = require('util');
 const redis = require('redis');
 const sha1 = require('sha1');
-const fs = require('fs');
+
 chai.use(chaiHttp);
 
 describe('GET /files/:id/data', () => {
@@ -18,12 +19,15 @@ describe('GET /files/:id/data', () => {
     let redisSetAsync;
     let redisKeysAsync;
 
+    let fileUser = null;
+    let fileUserId = null;
+    
     let initialUser = null;
     let initialUserId = null;
     let initialUserToken = null;
 
-    let initialFileId = null;
-    let initialFileContent = null;
+    let initialUnpublishedFolderId = null;
+    let initialPublishedFolderId = null;
 
     const folderTmpFilesManagerPath = process.env.FOLDER_PATH || '/tmp/files_manager';
 
@@ -35,11 +39,6 @@ describe('GET /files/:id/data', () => {
         keys.forEach(async (key) => {
             await redisDelAsync(key);
         });
-    }
-    const fctCreateTmp = () => {
-        if (!fs.existsSync(folderTmpFilesManagerPath)) {
-            fs.mkdirSync(folderTmpFilesManagerPath);
-        }
     }
     const fctRemoveTmp = () => {
         if (fs.existsSync(folderTmpFilesManagerPath)) {
@@ -73,23 +72,40 @@ describe('GET /files/:id/data', () => {
                     initialUserId = createdDocs.ops[0]._id.toString();
                 }
 
-                // Add 1 file
-                fctCreateTmp();
-                const fileLocalPath = `${folderTmpFilesManagerPath}/${uuidv4()}`;
-                initialFileContent = `Hello-${uuidv4()}`;
-                fs.writeFileSync(fileLocalPath, initialFileContent);
+                // Add 1 user owner of file
+                fileUser = { 
+                    email: `${fctRandomString()}@me.com`,
+                    password: sha1(fctRandomString())
+                }
+                const createdUserFileDocs = await testClientDb.collection('users').insertOne(fileUser);
+                if (createdUserFileDocs && createdUserFileDocs.ops.length > 0) {
+                    fileUserId = createdUserFileDocs.ops[0]._id.toString();
+                }
 
-                const initialFile = { 
-                    userId: ObjectID(initialUserId), 
+                // Add 1 folder unpublished
+                const initialUnpublishedFolder = { 
+                    userId: ObjectID(fileUserId), 
                     name: fctRandomString(), 
-                    type: "file", 
+                    type: "folder", 
                     parentId: '0',
-                    isPublic: false,
-                    localPath: fileLocalPath
+                    isPublic: false
                 };
-                const createdFileDocs = await testClientDb.collection('files').insertOne(initialFile);
-                if (createdFileDocs && createdFileDocs.ops.length > 0) {
-                    initialFileId = createdFileDocs.ops[0]._id.toString();
+                const createdUFolderDocs = await testClientDb.collection('files').insertOne(initialUnpublishedFolder);
+                if (createdUFolderDocs && createdUFolderDocs.ops.length > 0) {
+                    initialUnpublishedFolderId = createdUFolderDocs.ops[0]._id.toString();
+                }
+
+                // Add 1 folder published 
+                const initialPublishedFolder = { 
+                    userId: ObjectID(fileUserId), 
+                    name: fctRandomString(), 
+                    type: "folder", 
+                    parentId: '0',
+                    isPublic: true
+                };
+                const createdPFolderDocs = await testClientDb.collection('files').insertOne(initialPublishedFolder);
+                if (createdPFolderDocs && createdPFolderDocs.ops.length > 0) {
+                    initialPublishedFolderId = createdPFolderDocs.ops[0]._id.toString();
                 }
 
                 testRedisClient = redis.createClient();
@@ -114,25 +130,31 @@ describe('GET /files/:id/data', () => {
         fctRemoveTmp();
     });
 
-    it('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
+    it('GET /files/:id/data with an unpublished folder linked to :id but user authenticated and not owner', (done) => {
         chai.request('http://localhost:5000')
-            .get(`/files/${initialFileId}/data`)
+            .get(`/files/${initialUnpublishedFolderId}/data`)
             .set('X-Token', initialUserToken)
-            .buffer()
-            .parse((res, cb) => {
-                res.setEncoding("binary");
-                res.data = "";
-                res.on("data", (chunk) => {
-                    res.data += chunk;
-                });
-                res.on("end", () => {
-                    cb(null, new Buffer(res.data, "binary"));
-                });
-            })
             .end(async (err, res) => {
                 chai.expect(err).to.be.null;
-                chai.expect(res).to.have.status(200);
-                chai.expect(res.body.toString()).to.equal(initialFileContent);
+                chai.expect(res).to.have.status(404);
+
+                const resError = res.body.error;
+                chai.expect(resError).to.equal("Not found");
+                
+                done();
+            });
+    }).timeout(30000);
+
+    it('GET /files/:id/data with a published folder linked to :id but user authenticated and not owner', (done) => {
+        chai.request('http://localhost:5000')
+            .get(`/files/${initialPublishedFolderId}/data`)
+            .set('X-Token', initialUserToken)
+            .end(async (err, res) => {
+                chai.expect(err).to.be.null;
+                chai.expect(res).to.have.status(400);
+
+                const resError = res.body.error;
+                chai.expect(resError).to.equal("A folder doesn't have content");
                 
                 done();
             });

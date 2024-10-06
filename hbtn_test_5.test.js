@@ -8,6 +8,8 @@ const { promisify } = require('util');
 const redis = require('redis');
 const sha1 = require('sha1');
 const fs = require('fs');
+
+
 chai.use(chaiHttp);
 
 describe('GET /files/:id/data', () => {
@@ -18,6 +20,9 @@ describe('GET /files/:id/data', () => {
     let redisSetAsync;
     let redisKeysAsync;
 
+    let fileUser = null;
+    let fileUserId = null;
+    
     let initialUser = null;
     let initialUserId = null;
     let initialUserToken = null;
@@ -73,6 +78,16 @@ describe('GET /files/:id/data', () => {
                     initialUserId = createdDocs.ops[0]._id.toString();
                 }
 
+                // Add 1 user owner of file
+                fileUser = { 
+                    email: `${fctRandomString()}@me.com`,
+                    password: sha1(fctRandomString())
+                }
+                const createdUserFileDocs = await testClientDb.collection('users').insertOne(fileUser);
+                if (createdUserFileDocs && createdUserFileDocs.ops.length > 0) {
+                    fileUserId = createdUserFileDocs.ops[0]._id.toString();
+                }
+
                 // Add 1 file
                 fctCreateTmp();
                 const fileLocalPath = `${folderTmpFilesManagerPath}/${uuidv4()}`;
@@ -80,11 +95,11 @@ describe('GET /files/:id/data', () => {
                 fs.writeFileSync(fileLocalPath, initialFileContent);
 
                 const initialFile = { 
-                    userId: ObjectID(initialUserId), 
+                    userId: ObjectID(fileUserId), 
                     name: fctRandomString(), 
                     type: "file", 
                     parentId: '0',
-                    isPublic: false,
+                    isPublic: true,
                     localPath: fileLocalPath
                 };
                 const createdFileDocs = await testClientDb.collection('files').insertOne(initialFile);
@@ -114,7 +129,7 @@ describe('GET /files/:id/data', () => {
         fctRemoveTmp();
     });
 
-    it('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner', (done) => {
+    it('GET /files/:id/data with a published file linked to :id and user authenticated but not owner', (done) => {
         chai.request('http://localhost:5000')
             .get(`/files/${initialFileId}/data`)
             .set('X-Token', initialUserToken)

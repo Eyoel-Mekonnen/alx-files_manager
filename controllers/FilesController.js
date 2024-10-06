@@ -53,7 +53,7 @@ class FilesController {
     }
  }
 
-  static getUserId (authToken) {
+  static async getUserId (authToken) {
     console.log(`I am inside the get userID function ${authToken}`);
     return redisClient.get(authToken)
       .then((userId) => {
@@ -288,9 +288,9 @@ class FilesController {
       return res.status(404).send({ error: 'Not found' });
     }
     if (file.type === 'folder') {
-      return res.status(400).send({ error: 'A folder doesn\'t have content '});
+      return res.status(400).send({ error: 'A folder doesn\'t have content'});
     }
-    if (!file.localPath) {
+    if (!file.localPath || !fs.existsSync(file.localPath)) {
       return res.status(404).send({ error: 'Not found' });
     }
     const mime_type = mime.getType(file.localPath) || 'application/octet-stream';
