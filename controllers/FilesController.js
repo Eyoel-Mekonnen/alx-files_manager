@@ -10,7 +10,7 @@ const path = require('path');
 
 const { ObjectId } = require('mongodb');
 
-const mime = require('mime');
+const mime = require('mime-types');
 
 class FilesController {
   static async postUpload (req, res) {
@@ -293,8 +293,8 @@ class FilesController {
     if (!file.localPath || !fs.existsSync(file.localPath)) {
       return res.status(404).send({ error: 'Not found' });
     }
-    const mime_type = mime.getType(file.localPath) || 'application/octet-stream';
-    res.setHeader('Content-Type', mime_type);
+    const contentType = mime.contentType(file.name);
+    res.setHeader('Content-Type', contentType);
     return res.status(200).sendFile(file.localPath);
   }
 }

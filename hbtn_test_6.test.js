@@ -3,21 +3,26 @@ const chaiHttp = require('chai-http');
 
 const { v4: uuidv4 } = require('uuid');
 
-const fs = require('fs');
-
 const { MongoClient, ObjectID } = require('mongodb');
-
+const { promisify } = require('util');
+const redis = require('redis');
 const sha1 = require('sha1');
-
+const fs = require('fs');
 
 chai.use(chaiHttp);
 
 describe('GET /files/:id/data', () => {
     let testClientDb;
-    
+    let testRedisClient;
+    let redisDelAsync;
+    let redisGetAsync;
+    let redisSetAsync;
+    let redisKeysAsync;
+
     let initialUser = null;
     let initialUserId = null;
-    
+    let initialUserToken = null;
+
     let initialFileId = null;
     let initialFileContent = null;
 
@@ -25,6 +30,12 @@ describe('GET /files/:id/data', () => {
 
     const fctRandomString = () => {
         return Math.random().toString(36).substring(2, 15);
+    }
+    const fctRemoveAllRedisKeys = async () => {
+        const keys = await redisKeysAsync('auth_*');
+        keys.forEach(async (key) => {
+            await redisDelAsync(key);
+        });
     }
     const fctCreateTmp = () => {
         if (!fs.existsSync(folderTmpFilesManagerPath)) {
@@ -82,18 +93,32 @@ describe('GET /files/:id/data', () => {
                     initialFileId = createdFileDocs.ops[0]._id.toString();
                 }
 
-                resolve();
+                testRedisClient = redis.createClient();
+                redisDelAsync = promisify(testRedisClient.del).bind(testRedisClient);
+                redisGetAsync = promisify(testRedisClient.get).bind(testRedisClient);
+                redisSetAsync = promisify(testRedisClient.set).bind(testRedisClient);
+                redisKeysAsync = promisify(testRedisClient.keys).bind(testRedisClient);
+                testRedisClient.on('connect', async () => {
+                    fctRemoveAllRedisKeys();
+
+                    // Set token for this user
+                    initialUserToken = uuidv4()
+                    await redisSetAsync(`auth_${initialUserToken}`, initialUserId)
+                    resolve();
+                });
             }); 
         });
     });
         
     afterEach(() => {
+        fctRemoveAllRedisKeys();
         fctRemoveTmp();
     });
 
-    it('GET /files/:id/data with a published file linked to :id and user unauthenticated', (done) => {
+    it('GET /files/:id/data with a published file linked to :id and user authenticated and owner', (done) => {
         chai.request('http://localhost:5000')
             .get(`/files/${initialFileId}/data`)
+            .set('X-Token', initialUserToken)
             .buffer()
             .parse((res, cb) => {
                 res.setEncoding("binary");
