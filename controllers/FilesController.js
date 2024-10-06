@@ -272,14 +272,19 @@ class FilesController {
     if (req.params.id === undefined) {
       return res.status(404).send({ error: 'Not found' });
     }
-    const Id = ObjectId(req.params.id)
+    let Id;
+    try {
+        Id = ObjectId(req.params.id);
+    } catch (error) {
+        return res.status(400).send({ error: 'Invalid ID format' });
+    } 
     const file = await dbClient.db.collection('files').findOne({_id: Id});
     if (!file) {
       return res.status(404).send({ error: 'Not found' });
     }
     const userID = req.headers['x-token'];
     const userId = await FilesController.getUserId(`auth_${userID}`);
-    if (file.isPublic === false && (!userId && userId !== file.userId.toString())) {
+    if (file.isPublic === false && (!userId || userId.toString() !== file.userId.toString())) {
       return res.status(404).send({ error: 'Not found' });
     }
     if (file.type === 'folder') {
@@ -290,7 +295,7 @@ class FilesController {
     }
     const mime_type = mime.getType(file.localPath) || 'application/octet-stream';
     res.setHeader('Content-Type', mime_type);
-    res.status(200).sendFile(file.localPath);
+    return res.status(200).sendFile(file.localPath);
   }
 }
 module.exports = FilesController;
