@@ -12,6 +12,11 @@ const { ObjectId } = require('mongodb');
 
 const mime = require('mime-types');
 
+
+const Queue = require('bull');
+
+const queue = new Queue('fileQueue');
+
 class FilesController {
   static async postUpload (req, res) {
     const acceptedType = ['folder', 'file', 'image'];
@@ -98,6 +103,7 @@ class FilesController {
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
           if (output) {
+            fileQueue.add({fileId: file._id, userId: file.userId });
             //console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
             return res.status(201).send({
               id: output.insertedId.toString(), 
@@ -121,6 +127,7 @@ class FilesController {
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
           if (output) {
+	    fileQueue.add({fileId: file._id, userId: file.userId });
             return res.status(201).send({
               id: output.insertedId.toString(),
 	      userId: object.userId.toString(),
