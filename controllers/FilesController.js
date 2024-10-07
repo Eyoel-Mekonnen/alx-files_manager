@@ -103,7 +103,10 @@ class FilesController {
       return dbClient.db.collection('files').insertOne(object)
         .then((output) => {
           if (output) {
-            fileQueue.add({fileId: file._id, userId: file.userId });
+	    console.log('I am about to be passed');
+	    console.log(output.insertedId)
+	    console.log(object.userId)
+            queue.add({fileId: output.insertedId, userId: object.userId });
             //console.log('I want to say am successfully added', JSON.stringify(object,null, 2));
             return res.status(201).send({
               id: output.insertedId.toString(), 
